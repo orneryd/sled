@@ -6,7 +6,7 @@ use fault_injection::{annotate, fallible};
 
 use crate::Db;
 
-struct TempDir(PathBuf);
+pub struct TempDir(PathBuf);
 
 impl std::fmt::Debug for TempDir {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

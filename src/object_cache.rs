@@ -355,7 +355,7 @@ impl<const LEAF_FANOUT: usize> ObjectCache<LEAF_FANOUT> {
         self.flush_epoch.current_flush_epoch()
     }
 
-    pub fn check_into_flush_epoch(&self) -> FlushEpochGuard {
+    pub fn check_into_flush_epoch(&self) -> FlushEpochGuard<'_> {
         self.flush_epoch.check_in()
     }
 
