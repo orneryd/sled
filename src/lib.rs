@@ -138,6 +138,7 @@ mod leaf;
 mod metadata_store;
 mod object_cache;
 mod object_location_mapper;
+mod storage_directory;
 mod tree;
 
 #[cfg(any(

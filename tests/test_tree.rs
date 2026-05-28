@@ -1445,6 +1445,18 @@ fn tree_import_export() -> io::Result<()> {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
+fn second_open_on_same_path_is_rejected() {
+    common::setup_logger();
+
+    let config = Config::tmp().unwrap().flush_every_ms(None);
+    let _db: Db = config.clone().open().unwrap();
+    let reopened: io::Result<Db> = config.open();
+
+    assert!(reopened.is_err());
+}
+
+#[test]
 #[cfg_attr(any(target_os = "fuchsia", miri), ignore)]
 fn quickcheck_tree_matches_btreemap() {
     let n_tests = if cfg!(windows) { 25 } else { 100 };

@@ -10,13 +10,13 @@ use std::time::{Duration, Instant};
 use ebr::{Ebr, Guard};
 use fault_injection::{annotate, fallible, maybe};
 use fnv::FnvHashSet;
-use fs2::FileExt as _;
 use std::sync::Mutex;
 
 use parking_lot::RwLock;
 use rayon::prelude::*;
 
 use crate::object_location_mapper::{AllocatorStats, ObjectLocationMapper};
+use crate::storage_directory;
 use crate::{CollectionId, Config, DeferredFree, MetadataStore, ObjectId};
 
 const WARN: &str = "DO_NOT_PUT_YOUR_FILES_HERE";
@@ -735,17 +735,14 @@ impl Heap {
                     continue;
                 }
             }
-            maybe!(fs::File::open(p).and_then(|f| f.sync_all()))?;
+            maybe!(storage_directory::sync_directory(p))?;
         }
 
         let _ = fs::File::create(path.join(WARN));
 
-        let mut file_lock_opts = fs::OpenOptions::new();
-        file_lock_opts.create(false).read(false).write(false);
-        let directory_lock = fallible!(fs::File::open(path));
-        fallible!(directory_lock.try_lock_exclusive());
+        let directory_lock = fallible!(storage_directory::open_and_lock(path));
 
-        maybe!(fs::File::open(&slabs_dir).and_then(|f| f.sync_all()))?;
+        maybe!(storage_directory::sync_directory(&slabs_dir))?;
         maybe!(directory_lock.sync_all())?;
 
         let persistent_settings =
@@ -799,7 +796,7 @@ impl Heap {
             })
         }
 
-        maybe!(fs::File::open(&slabs_dir).and_then(|f| f.sync_all()))?;
+        maybe!(storage_directory::sync_directory(&slabs_dir))?;
 
         log::debug!("recovery of Heap at {:?} complete", path);
 

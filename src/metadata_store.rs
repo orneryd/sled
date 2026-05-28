@@ -16,6 +16,7 @@ use rayon::prelude::*;
 use zstd::stream::read::Decoder as ZstdDecoder;
 use zstd::stream::write::Encoder as ZstdEncoder;
 
+use crate::storage_directory;
 use crate::{CollectionId, ObjectId, heap::UpdateMetadata};
 
 const WARN: &str = "DO_NOT_PUT_YOUR_FILES_HERE";
@@ -267,8 +268,6 @@ impl MetadataStore {
         // Metadata - node id, value, user data
         Vec<UpdateMetadata>,
     )> {
-        use fs2::FileExt;
-
         // TODO NOCOMMIT
         let sync_status = std::process::Command::new("sync")
             .status()
@@ -292,9 +291,8 @@ impl MetadataStore {
 
         let _ = fs::File::create(path.join(WARN));
 
-        let directory_lock = fallible!(fs::File::open(path));
+        let directory_lock = fallible!(storage_directory::open_and_lock(path));
         fallible!(directory_lock.sync_all());
-        fallible!(directory_lock.try_lock_exclusive());
 
         let recovery =
             MetadataStore::recover_inner(&storage_directory, &directory_lock)?;
