@@ -268,16 +268,21 @@ impl MetadataStore {
         // Metadata - node id, value, user data
         Vec<UpdateMetadata>,
     )> {
-        // TODO NOCOMMIT
+        // Run sync(1) before recovery to flush pending filesystem writes.
+        // On Windows there is no sync command, and on non-Unix platforms
+        // the command is not expected to exist — suppress the noisy warning.
         let sync_status = std::process::Command::new("sync")
             .status()
             .map(|status| status.success());
 
         if !matches!(sync_status, Ok(true)) {
-            log::warn!(
-                "sync command before recovery failed: {:?}",
-                sync_status
-            );
+            // NotFound is expected on Windows / non-Unix — don't warn.
+            if !matches!(&sync_status, Err(e) if e.kind() == std::io::ErrorKind::NotFound) {
+                log::warn!(
+                    "sync command before recovery failed: {:?}",
+                    sync_status
+                );
+            }
         }
 
         let path = storage_directory.as_ref();
